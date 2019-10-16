@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">icon.cdn.jetstream.video</domain>
+        <domain includeSubdomains="true">d85mhbly9q6nd.cloudfront.net</domain>
+        <domain includeSubdomains="true">d2nlt8hu2c54mr.cloudfront.net</domain>
+        <domain includeSubdomains="true">d2c018txhbneoo.cloudfront.net</domain>
+        <domain includeSubdomains="true">d23415g5ex7fu8.cloudfront.net</domain>
+        <domain includeSubdomains="true">vitunes.jetstream.video</domain>
+        <domain includeSubdomains="true">114.143.181.228</domain>
+        <domain includeSubdomains="true">192.168.1.172</domain>
+        <domain includeSubdomains="true">vitune.in</domain>
+        <domain includeSubdomains="true">d1b844ggs048eg.cloudfront.net</domain>
+    </domain-config>
+    <!--Set application-wide security config using base-config tag.-->
+    <!--<base-config cleartextTrafficPermitted="true"/>-->
+</network-security-config>
