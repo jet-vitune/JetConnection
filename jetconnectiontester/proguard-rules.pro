@@ -19,3 +19,14 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+-keepattributes Signature
+
+# For using GSON @Expose annotation
+-keepattributes *Annotation*
+
+-keep class com.jet.jetconnectiontester.JetConnectionClassManager** { *; }
+-keep class com.jet.jetconnectiontester.JetConnectionListner** { *; }
+-keep class com.jet.jetconnectiontester.ConnectionQuality** { *; }
+-keep class com.jet.jetconnectiontester.ConnectionType** { *; }
+-keep class com.jet.jetconnectiontester.ConnectionChangeListner** { *; }

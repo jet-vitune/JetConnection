@@ -1,6 +1,6 @@
 apply plugin: 'com.android.library'
 apply plugin: 'com.github.dcendents.android-maven'
-group='com.github.jet-vitune'
+group = 'com.github.jet-vitune'
 android {
     compileSdkVersion 28
 
@@ -13,15 +13,25 @@ android {
         multiDexEnabled true //Add this
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
+        consumerProguardFiles 'proguard-rules.pro'
     }
 
     buildTypes {
-        release {
-            minifyEnabled false
 
+        release {
+
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            debuggable false
+            jniDebuggable false
+            zipAlignEnabled true
         }
     }
 
+    // default build flavour
+    defaultPublishConfig "release"
+    // true to publish all flavour artifacts
+    publishNonDefault true
 }
 
 dependencies {

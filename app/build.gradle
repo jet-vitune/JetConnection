@@ -1,6 +1,16 @@
 apply plugin: 'com.android.application'
 
 android {
+
+    signingConfigs {
+        testConfig{
+            keyAlias 'poonawala'
+            keyPassword 'jetsynthesys123'
+            storeFile file('poonawala_keystore.jks')
+            storePassword 'jetsynthesys123'
+        }
+    }
+
     compileSdkVersion 28
     defaultConfig {
         applicationId "com.example.jet_test"
@@ -15,7 +25,7 @@ android {
         release {
             minifyEnabled true   /* shrink */
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-
+            signingConfig signingConfigs.testConfig
         }
 
         debug {
