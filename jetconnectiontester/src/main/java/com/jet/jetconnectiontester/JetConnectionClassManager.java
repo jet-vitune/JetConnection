@@ -80,6 +80,26 @@ public class JetConnectionClassManager {
     }
 
 
+    public void startSpeedTest(){
+
+        try {
+            if (ConnectionBase.getInstance().isConnected(ConnectionBase.getInstance().context)) {
+
+                ConnectionBase.getInstance().mTries = 0;
+                ConnectionBase.getInstance().downloadImageresponseTime = 0;
+                ConnectionBase.getInstance().downloadImageStartTime = System.currentTimeMillis();
+                ConnectionBase.getInstance().mConnectionClass = ConnectionQuality.UNKNOWN;
+
+                ConnectionBase.getInstance().startSpeedTest();
+            } else {
+                ConnectionBase.getInstance().jetConnectionListner.getCurrentBandWidth(ConnectionQuality.INTERNET_NOT_AVAILABLE);
+            }
+        }catch (Exception e){
+            if(BuildConfig.DEBUG) {
+                Log.e(TAG, e.toString());
+            }
+        }
+    }
     public void registerConnectionChangeListner(){
 
         ConnectionBase.getInstance().networkChangeReceiver = new NetworkChangeReceiver();
