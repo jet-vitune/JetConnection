@@ -35,11 +35,12 @@ public class ConnectionBase {
     protected JetConnectionListner jetConnectionListner;
     protected ConnectionChangeListner connectionChangeListner;
     protected NetworkChangeReceiver networkChangeReceiver;
+    protected DownloadImage downloadImage;
+    protected boolean isDownloadTaskInProgress;
 
+    public static ConnectionBase getInstance() {
 
-    public static ConnectionBase getInstance(){
-
-        if(connectionBase == null){
+        if (connectionBase == null) {
             connectionBase = new ConnectionBase();
         }
 
@@ -47,42 +48,42 @@ public class ConnectionBase {
     }
 
 
-    public void connectionClassManager(Context context, JetConnectionListner jetConnectionListner, ConnectionChangeListner connectionChangeListner){
+    public void connectionClassManager(Context context, JetConnectionListner jetConnectionListner, ConnectionChangeListner connectionChangeListner) {
 
         this.context = context;
         this.jetConnectionListner = jetConnectionListner;
         this.connectionChangeListner = connectionChangeListner;
-
+        downloadImage = new DownloadImage();
         mConnectionClassManager = ConnectionClassManager.getInstance();
         mDeviceBandwidthSampler = DeviceBandwidthSampler.getInstance();
         mConnectionClassManager.reset();
 
-        if(BuildConfig.DEBUG) {
+        if (BuildConfig.DEBUG) {
             Log.e(TAG, "Current BandWidth Quality: " + mConnectionClassManager.getCurrentBandwidthQuality().toString());
         }
 
         mListener = new ConnectionChangedListener();
     }
 
-    public void connectionClassManager(Context context, String url, JetConnectionListner jetConnectionListner, ConnectionChangeListner connectionChangeListner){
+    public void connectionClassManager(Context context, String url, JetConnectionListner jetConnectionListner, ConnectionChangeListner connectionChangeListner) {
 
         this.context = context;
         this.mURL = url;
         this.jetConnectionListner = jetConnectionListner;
         this.connectionChangeListner = connectionChangeListner;
-
+        downloadImage = new DownloadImage();
         mConnectionClassManager = ConnectionClassManager.getInstance();
         mDeviceBandwidthSampler = DeviceBandwidthSampler.getInstance();
         mConnectionClassManager.reset();
 
-        if(BuildConfig.DEBUG) {
+        if (BuildConfig.DEBUG) {
             Log.e(TAG, "Current BandWidth Quality: " + mConnectionClassManager.getCurrentBandwidthQuality().toString());
         }
 
         mListener = new ConnectionChangedListener();
     }
 
-    public void connectionClassManager(Context context,  ConnectionChangeListner connectionChangeListner){
+    public void connectionClassManager(Context context, ConnectionChangeListner connectionChangeListner) {
 
         this.context = context;
         this.connectionChangeListner = connectionChangeListner;
@@ -94,7 +95,7 @@ public class ConnectionBase {
         public void onBandwidthStateChange(ConnectionQuality bandwidthState) {
             mConnectionClass = bandwidthState;
 
-            if(BuildConfig.DEBUG) {
+            if (BuildConfig.DEBUG) {
                 Log.e(TAG, "onBandwidthStateChange: " + mConnectionClass.toString());
             }
         }
@@ -111,9 +112,14 @@ public class ConnectionBase {
         }
     }
 
-    public void startSpeedTest(){
+    public void startSpeedTest() {
 
-        new DownloadImage().execute(mURL);
+        if(!isDownloadTaskInProgress) {
+            downloadImage.execute(mURL);
+        }else {
+            downloadImage.cancel(true);
+            downloadImage.execute(mURL);
+        }
     }
 
     private class DownloadImage extends AsyncTask<String, Void, Void> {
@@ -123,7 +129,7 @@ public class ConnectionBase {
         @Override
         protected void onPreExecute() {
             mDeviceBandwidthSampler.startSampling();
-
+            isDownloadTaskInProgress = true;
             if (BuildConfig.DEBUG) {
                 Log.e(TAG, " startSampling");
             }
@@ -163,13 +169,17 @@ public class ConnectionBase {
             // Retry for up to 10 times until we find a ConnectionClass.
             if (mConnectionClass == ConnectionQuality.UNKNOWN && mTries < 10) {
                 mTries++;
-                new DownloadImage().execute(mURL);
-            }else if(mConnectionClass == ConnectionQuality.UNKNOWN && mTries >= 10){
-
+                isDownloadTaskInProgress = false;
+                downloadImage.execute(mURL);
+            } else if (mConnectionClass == ConnectionQuality.UNKNOWN && mTries >= 10) {
+                isDownloadTaskInProgress = false;
                 jetConnectionListner.getCurrentBandWidth(ConnectionQuality.UNKNOWN, 0, 0);
-                if(exception != null) {
+                if (exception != null) {
                     jetConnectionListner.getErrorMsg(exception.toString(), ConnectionQuality.UNKNOWN);
                 }
+            }else if(mConnectionClass != ConnectionQuality.UNKNOWN){
+
+                isDownloadTaskInProgress = false;
             }
 
             if (!mDeviceBandwidthSampler.isSampling()) {
@@ -213,8 +223,8 @@ public class ConnectionBase {
                 }
             } catch (Exception ex) {
 
-                if(BuildConfig.DEBUG) {
-                    Log.e(TAG, ""+ex.toString());
+                if (BuildConfig.DEBUG) {
+                    Log.e(TAG, "" + ex.toString());
                 }
             }
             if (networkList.contains("tun0")) {
@@ -240,7 +250,7 @@ public class ConnectionBase {
                 proxySettingEnable = true;
             }
         } catch (Exception e) {
-            if(BuildConfig.DEBUG) {
+            if (BuildConfig.DEBUG) {
                 Log.e(TAG, e.toString());
             }
         }
