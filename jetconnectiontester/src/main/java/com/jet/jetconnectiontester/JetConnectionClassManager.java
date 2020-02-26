@@ -100,6 +100,11 @@ public class JetConnectionClassManager {
             }
         }
     }
+
+    public void stopSpeedTest(){
+        ConnectionBase.getInstance().stopSpeedTest();
+    }
+
     public void registerConnectionChangeListner(){
 
         ConnectionBase.getInstance().networkChangeReceiver = new NetworkChangeReceiver();

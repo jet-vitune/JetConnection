@@ -16,6 +16,7 @@ import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.ThreadPoolExecutor;
 
 public class ConnectionBase {
 
@@ -27,7 +28,7 @@ public class ConnectionBase {
     protected DeviceBandwidthSampler mDeviceBandwidthSampler;
     protected ConnectionChangedListener mListener;
     protected ConnectionQuality mConnectionClass = ConnectionQuality.UNKNOWN;
-    protected String mURL = "https://vitune.publicam.in/test.jpg";
+    protected String mURL = "https://d2c018txhbneoo.cloudfront.net/ViTune/test.jpg";
     protected int mTries = 0;
     protected long downloadImageStartTime;
     protected long downloadImageresponseTime;
@@ -36,7 +37,6 @@ public class ConnectionBase {
     protected ConnectionChangeListner connectionChangeListner;
     protected NetworkChangeReceiver networkChangeReceiver;
     protected DownloadImage downloadImage;
-    protected boolean isDownloadTaskInProgress;
 
     public static ConnectionBase getInstance() {
 
@@ -53,7 +53,7 @@ public class ConnectionBase {
         this.context = context;
         this.jetConnectionListner = jetConnectionListner;
         this.connectionChangeListner = connectionChangeListner;
-        downloadImage = new DownloadImage();
+
         mConnectionClassManager = ConnectionClassManager.getInstance();
         mDeviceBandwidthSampler = DeviceBandwidthSampler.getInstance();
         mConnectionClassManager.reset();
@@ -71,7 +71,7 @@ public class ConnectionBase {
         this.mURL = url;
         this.jetConnectionListner = jetConnectionListner;
         this.connectionChangeListner = connectionChangeListner;
-        downloadImage = new DownloadImage();
+
         mConnectionClassManager = ConnectionClassManager.getInstance();
         mDeviceBandwidthSampler = DeviceBandwidthSampler.getInstance();
         mConnectionClassManager.reset();
@@ -114,30 +114,43 @@ public class ConnectionBase {
 
     public void startSpeedTest() {
 
-        if(!isDownloadTaskInProgress) {
-            downloadImage.execute(mURL);
-        }else {
+        if (downloadImage != null) {
             downloadImage.cancel(true);
-            downloadImage.execute(mURL);
+            downloadImage = null;
+        }
+        downloadImage = new DownloadImage(mURL);
+        downloadImage.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+    }
+
+    public void stopSpeedTest(){
+        if (downloadImage != null) {
+            downloadImage.cancel(true);
+            downloadImage = null;
         }
     }
 
-    private class DownloadImage extends AsyncTask<String, Void, Void> {
+    private class DownloadImage extends AsyncTask<Void, Void, Void> {
 
         Exception exception;
+        String  url;
+
+        DownloadImage(String imageUrl){
+            url = imageUrl;
+        }
+
 
         @Override
         protected void onPreExecute() {
             mDeviceBandwidthSampler.startSampling();
-            isDownloadTaskInProgress = true;
+
             if (BuildConfig.DEBUG) {
                 Log.e(TAG, " startSampling");
             }
         }
 
         @Override
-        protected Void doInBackground(String... url) {
-            String imageURL = url[0];
+        protected Void doInBackground(Void... voids) {
+            String imageURL = url;
             try {
                 // Open a stream to download the image from our URL.
                 URLConnection connection = new URL(imageURL).openConnection();
@@ -169,17 +182,20 @@ public class ConnectionBase {
             // Retry for up to 10 times until we find a ConnectionClass.
             if (mConnectionClass == ConnectionQuality.UNKNOWN && mTries < 10) {
                 mTries++;
-                isDownloadTaskInProgress = false;
-                downloadImage.execute(mURL);
+
+                if (downloadImage != null) {
+                    downloadImage.cancel(true);
+                    downloadImage = null;
+                }
+                downloadImage = new DownloadImage(mURL);
+                downloadImage.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+
             } else if (mConnectionClass == ConnectionQuality.UNKNOWN && mTries >= 10) {
-                isDownloadTaskInProgress = false;
+
                 jetConnectionListner.getCurrentBandWidth(ConnectionQuality.UNKNOWN, 0, 0);
                 if (exception != null) {
                     jetConnectionListner.getErrorMsg(exception.toString(), ConnectionQuality.UNKNOWN);
                 }
-            }else if(mConnectionClass != ConnectionQuality.UNKNOWN){
-
-                isDownloadTaskInProgress = false;
             }
 
             if (!mDeviceBandwidthSampler.isSampling()) {
