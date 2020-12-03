@@ -165,26 +165,35 @@ public class ConnectionBase {
 
         @Override
         protected void onPostExecute(Void v) {
-            mDeviceBandwidthSampler.stopSampling();
-            // Retry for up to 10 times until we find a ConnectionClass.
-            if (mConnectionClass == ConnectionQuality.UNKNOWN && mTries < 10) {
-                mTries++;
-                isDownloadTaskInProgress = false;
-                downloadImage.execute(mURL);
-            } else if (mConnectionClass == ConnectionQuality.UNKNOWN && mTries >= 10) {
-                isDownloadTaskInProgress = false;
-                jetConnectionListner.getCurrentBandWidth(ConnectionQuality.UNKNOWN, 0, 0);
-                if (exception != null) {
-                    jetConnectionListner.getErrorMsg(exception.toString(), ConnectionQuality.UNKNOWN);
+
+            try {
+                mDeviceBandwidthSampler.stopSampling();
+                // Retry for up to 10 times until we find a ConnectionClass.
+                if (mConnectionClass == ConnectionQuality.UNKNOWN && mTries < 10) {
+                    mTries++;
+                    isDownloadTaskInProgress = false;
+                    downloadImage.cancel(true);
+                    downloadImage = new DownloadImage();
+                    downloadImage.execute(mURL);
+                } else if (mConnectionClass == ConnectionQuality.UNKNOWN && mTries >= 10) {
+                    isDownloadTaskInProgress = false;
+                    jetConnectionListner.getCurrentBandWidth(ConnectionQuality.UNKNOWN, 0, 0);
+                    if (exception != null) {
+                        jetConnectionListner.getErrorMsg(exception.toString(), ConnectionQuality.UNKNOWN);
+                    }
+                } else if (mConnectionClass != ConnectionQuality.UNKNOWN) {
+
+                    isDownloadTaskInProgress = false;
                 }
-            }else if(mConnectionClass != ConnectionQuality.UNKNOWN){
 
-                isDownloadTaskInProgress = false;
-            }
-
-            if (!mDeviceBandwidthSampler.isSampling()) {
+                if (!mDeviceBandwidthSampler.isSampling()) {
+                    if (BuildConfig.DEBUG) {
+                        Log.e(TAG, "onPostExecute: mDeviceBandwidthSampler.isSampling is false");
+                    }
+                }
+            }catch (Exception e){
                 if (BuildConfig.DEBUG) {
-                    Log.e(TAG, "onPostExecute: mDeviceBandwidthSampler.isSampling is false");
+                    Log.e(TAG, e.toString());
                 }
             }
         }
